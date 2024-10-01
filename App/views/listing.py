@@ -45,3 +45,20 @@ def delist_action(listingId):
             return jsonify({"message": f"listing - {listing.listingId} delisted"})
         return jsonify({"error": "listing not created bad id"}), 400
     return jsonify({"error": "User not authorized to perform this action"}), 403
+
+@listing_views.route('/listings/<int:listingId>/sell', methods=['PUT'])
+@jwt_required()
+def confirm_sell_game(listingId):
+    data = request.json
+    if 'status' not in data or data['status'] != 'sold':
+        return jsonify({"error": "Invalid status. Must be sold."}), 400
+
+    customer  = get_customer(get_jwt_identity())
+    listing = get_listing(listingId)
+
+    if not customer or not listing:
+        return jsonify({"error":"Customer or listing not found"}), 404
+
+    if listing.ownerId != customer.id:
+        return jsonify({"error": "You are not authorized to sell this listing"}), 403
+
